@@ -6,9 +6,9 @@ available is [mRMR][2] and I'm currently working on [Single Feature Optimization
 
 Content
 -------
-* *src* contains the source code of the library
-* *jar* is the library you can use to run mRMR algorithm
-* *example* provides a script with all the commands required to run mRMR
+* **src** contains the source code of the library
+* **jar** is the library you can use to run mRMR algorithm
+* **example** provides a script with all the commands required to run mRMR
 
 Unit Tests
 ----------
