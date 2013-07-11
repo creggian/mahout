@@ -56,7 +56,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MRMRMapper extends Mapper<IntWritable, VectorWritable, IntWritable, VectorWritable> {
+public class MRMRMapper extends Mapper<LongWritable, Text, IntWritable, Text> {
     
 	private ArrayList<String> listSetS = new ArrayList<String>();
 	private Path[] localFiles;
@@ -66,6 +66,7 @@ public class MRMRMapper extends Mapper<IntWritable, VectorWritable, IntWritable,
 	
 	private IntWritable keyOut = new IntWritable();
 	private VectorWritable vectorOut = new VectorWritable();
+	private Text textOut = new Text();
 	
 	protected void setup(Context context) throws IOException, InterruptedException {
 		Configuration conf = context.getConfiguration();
@@ -94,8 +95,12 @@ public class MRMRMapper extends Mapper<IntWritable, VectorWritable, IntWritable,
 	 * @param index			it's the column index of the original dataset
 	 * @param vector		values of the column identified by index param
 	 */
-	public void map(IntWritable index, VectorWritable vector, Context context) throws IOException, InterruptedException {
-					
+	public void map(LongWritable index, Text record, Context context) throws IOException, InterruptedException {
+		
+		if (index.get() == 0) {
+			return;
+		}
+		
 		ArrayList<String> Sindex = new ArrayList<String>();
 		String[] StringSetS = listSetS.toArray(new String[0]);
 		
@@ -105,24 +110,24 @@ public class MRMRMapper extends Mapper<IntWritable, VectorWritable, IntWritable,
 		}
 		
 		
-		if (index.get() == targetIndex) { // unique
-			for (int i=0; i<columnNumber; i++) {
-				if (Sindex.contains(""+i) || i == targetIndex) continue;
+		String[] values = record.toString().split(",");
+		for (int i=0; i<columnNumber; i++) {
+			// i is the index of the candidate feature
+			if (Sindex.contains(""+i) || i == targetIndex) continue;
+			
+			keyOut.set(i);
+			textOut.set(values[i]+","+values[targetIndex]+",t");
+			context.write(keyOut, textOut);
+			//System.out.println("-- "+keyOut.toString()+", "+textOut.toString());
+			
+			for (int j=0; j<columnNumber; j++) {
+				// j is the index of the already selected feature
+				if (!Sindex.contains(""+j)) continue;
+				
 				keyOut.set(i);
-				vectorOut.set(new NamedVector(vector.get(), "target"));
-				context.write(keyOut, vectorOut);
-			}
-		}
-		else if (!Sindex.contains(index.toString())) { // many
-			vectorOut.set(new NamedVector(vector.get(), "candidate"));
-			context.write(index, vectorOut);
-		}
-		else if (Sindex.contains(index.toString())) { // few
-			for (int i=0; i<columnNumber; i++) {
-				if (Sindex.contains(""+i) || i == targetIndex) continue;
-				keyOut.set(i);
-				vectorOut.set(new NamedVector(vector.get(), "feature"));
-				context.write(keyOut, vectorOut);
+				textOut.set(values[i]+","+values[j]+",f,"+j);
+				context.write(keyOut, textOut);
+				//System.out.println("-- "+keyOut.toString()+", "+textOut.toString());
 			}
 		}
 	}

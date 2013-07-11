@@ -34,14 +34,8 @@ DATASET=test_nci9_s3.csv
 rm -r ${OUTPUT_DIR}
 rm -r temp/
 
-# Conversion from CSV to Vectorized data
-${MAHOUT_HOME}/bin/mahout hadoop jar ${LIB_DIR}/mahout_feature.jar \
-        org.apache.mahout.feature.common.csv.CsvToVectorDriver \
-        -i ${DATA_DIR}/${DATASET} -o ${OUTPUT_DIR}/csv -nc 9713
-
-${MAHOUT_HOME}/bin/mahout rowid -i ${OUTPUT_DIR}/csv/part-m-00000 -o ${OUTPUT_DIR}/matrix
-${MAHOUT_HOME}/bin/mahout transpose -i output/matrix/matrix --numRows 60 --numCols 9713
+# Job
 
 ${MAHOUT_HOME}/bin/mahout hadoop jar ${LIB_DIR}/mahout_feature.jar \
 	org.apache.mahout.feature.mrmr.MRMRDriver \
-        -i ${OUTPUT_DIR}/matrix/transpose*/part-00000 -o ${OUTPUT_DIR}/mrmr -t 1 -nc 9713 -nr 61 -nf ${FEATURE_SELECTED}
+        -i ${DATA_DIR}/${DATASET} -o ${OUTPUT_DIR}/mrmr -t 1 -nc 9713 -nr 61 -nf ${FEATURE_SELECTED}

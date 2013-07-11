@@ -17,6 +17,7 @@
 package org.apache.mahout.feature.mrmr;
 
 import org.apache.mahout.feature.mrmr.common.commandline.DefaultOptionCreator;
+import org.apache.mahout.feature.common.correlation.MatrixList;
 import org.apache.mahout.feature.common.correlation.MutualInformation;
 
 import org.apache.hadoop.conf.Configuration;
@@ -57,7 +58,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MRMRReducer extends Reducer<IntWritable, VectorWritable, LongWritable, Text> {
+public class MRMRReducer extends Reducer<IntWritable, Text, LongWritable, Text> {
 		
 	private int targetIndex;
 	private int columnNumber;
@@ -71,43 +72,56 @@ public class MRMRReducer extends Reducer<IntWritable, VectorWritable, LongWritab
 		rowNumber = Integer.parseInt(conf.get(DefaultOptionCreator.ROW_NUMBER));
 	}
 	
-	public void reduce(IntWritable index, Iterable<VectorWritable> vectors, Context context) throws IOException, InterruptedException {
+	public void reduce(IntWritable index, Iterable<Text> items, Context context) throws IOException, InterruptedException {
 		
-		NamedVector target = null;
-		NamedVector candidate = null;
+		MatrixList target = new MatrixList();
+		ArrayList<MatrixList> features = new ArrayList<MatrixList>();
 		
-		ArrayList<NamedVector> feature = new ArrayList<NamedVector>();
-		
-		for (VectorWritable vectorWritable: vectors) {
-			Vector v = vectorWritable.get();
-			NamedVector vector = ((NamedVector) v);
+		for (Text item: items) {
+			String[] values = item.toString().split(",");
 			
-			if (vector.getName().equals("target")) {
-				target = vector.clone();
+			int candidateValue = Integer.parseInt(values[0]);
+			String type = values[2];
+			
+			if (type.equals("t")) {
+				
+				int targetValue = Integer.parseInt(values[1]);
+				target.store(candidateValue, targetValue);
+				
+			} else if (type.equals("f")) {
+				
+				int featureValue = Integer.parseInt(values[1]);
+				String featureName = values[3];
+				
+				boolean isNew = true;
+				for (MatrixList matrix: features) {
+					if (matrix.getName().equals(featureName)) {
+						isNew = false;
+						matrix.store(candidateValue, featureValue);
+						break;
+					}
+				}
+				if (isNew) {
+					MatrixList matrix = new MatrixList();
+					matrix.setName(featureName);
+					matrix.store(candidateValue, featureValue);
+					features.add(matrix);
+				}
+				
 			}
-			else if (vector.getName().equals("candidate")) {
-				candidate = vector.clone();
-			}
-			else if (vector.getName().equals("feature")) {
-				feature.add(vector.clone());
-			}
-		}
-		
-		if (candidate == null) { // it's a feature inside S
-			return;
 		}
 		
 		MutualInformation mi = new MutualInformation();
 		
 		double sum_features = 0.0;
-		for (NamedVector f: feature) {
-			sum_features = sum_features + mi.computeResult(f, candidate);
+		for (MatrixList f: features) {
+			sum_features = sum_features + mi.computeResult(f);
 		}
 		
-		double sum_target = mi.computeResult(target, candidate);
+		double sum_target = mi.computeResult(target);
 		
 		double coefficient = 1.0;
-		if (feature.size() > 1) coefficient = (1.0 / ((double) feature.size()));
+		if (features.size() > 1) coefficient = (1.0 / ((double) features.size()));
 		double correlation = sum_target - (coefficient * sum_features);
 		
 		context.write(new LongWritable(0), new Text(index.get()+","+String.format("%.5f", correlation)));

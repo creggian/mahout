@@ -23,6 +23,9 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.lang.Math;
 
+import org.apache.mahout.feature.common.correlation.MatrixList;
+import org.apache.mahout.feature.common.correlation.RowElement;
+
 public class MutualInformation {
 	
 	private int instanceNumber;
@@ -136,6 +139,28 @@ public class MutualInformation {
 					mi = mi + (pxy * (Math.log( pxy/(px*py) ) / Math.log(2)));
 					//mi = mi + (pxy * (Math.log( pxy/(px*py) )));
 				}
+			}
+		}
+		
+		return mi;
+	}
+	
+	public double computeResult(MatrixList matrix) {
+		
+		long tot = matrix.getOccurrences();
+		Iterator<RowElement> iterator = matrix.elementsIterator();
+		
+		double mi = 0.0;
+		while (iterator.hasNext()) {
+			RowElement e = iterator.next();
+			
+			double pxy = (double) e.getOccurrences() / tot;
+			double px = (double) matrix.getRowOccurrences(e.getRow()) / tot;
+			double py = (double) matrix.getColOccurrences(e.getCol()) / tot;
+			
+			if (pxy > 0.0) {
+				mi = mi + (pxy * (Math.log( pxy/(px*py) ) / Math.log(2)));
+				//mi = mi + (pxy * (Math.log( pxy/(px*py) )));
 			}
 		}
 		

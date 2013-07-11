@@ -22,6 +22,7 @@ import org.apache.mahout.feature.mrmr.common.mapreduce.MaxReducer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.util.ToolRunner;
 
 import org.apache.hadoop.io.Text;
@@ -32,6 +33,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.SequenceFileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.filecache.DistributedCache;
@@ -115,10 +117,10 @@ public class MRMRDriver extends AbstractJob {
 			
 			Job jobFeature = HadoopUtil.prepareJob(input,
                            tempFeature,
-                           SequenceFileInputFormat.class,
+                           TextInputFormat.class,
                            MRMRMapper.class,
                            IntWritable.class,
-                           VectorWritable.class,
+                           Text.class,
                            MRMRReducer.class,
                            LongWritable.class,
                            Text.class,
@@ -162,6 +164,11 @@ public class MRMRDriver extends AbstractJob {
                            
       boolean succeededMax = jobMax.waitForCompletion(true);
 			if (!succeededMax) return -1;
+			
+			try {
+				FileSystem hdfs = FileSystem.get(confMax);
+				hdfs.delete(tempFeature, true);
+			} catch (IOException e) {}
 			
 		}
 		return 0;
