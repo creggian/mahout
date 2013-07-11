@@ -1,8 +1,8 @@
 Feature Selection for Mahout
 ============================
 
-This is a Java library for [Apache Mahout][1] for feature selection algorithms in MapReduce. So far the only algorithm 
-available is [mRMR][2] and I'm currently working on [Single Feature Optimization][3].
+This is a Java library for [Apache Mahout][1] for feature selection algorithms in MapReduce. So far the algorithma 
+available are [mRMR][2] and Ranking.
 
 Content
 -------
