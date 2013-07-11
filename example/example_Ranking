@@ -12,7 +12,7 @@
 #
 # 2. Inside WORKSPACE create 'data' directory and
 # download the example dataset
-#   http://penglab.janelia.org/proj/mRMR/test_nci9_s3.csv
+#   https://github.com/Nophiq/Mahout/blob/master/dataset/rankingdataset.csv
 #
 # 3. Note: running the script the "output" and "temp"
 # directories will be removed
